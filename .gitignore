@@ -1,0 +1,94 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+backend-venv/
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Build outputs
+.next/
+out/
+*.tsbuildinfo
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Cache
+.eslintcache
+.pytest_cache/
+.mypy_cache/
+response_cache/
+
+# Database
+*.sqlite3
+*.db
+chroma_db/
+
+# Temporary
+temp/
+tmp/
+*.tmp
+.turbo/
+
+# Model files (large - keep local only)
+*.bin
+*.safetensors
+*.gguf
+
+# Upload directories
+uploads/
+downloads/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production
+.env.production
+.env.*.production
+
+# macOS
+.AppleDouble
+.AppleDB
+._*
+
+# Windows
+*.lnk
+
+# Linux
+.directory

@@ -2,6 +2,76 @@
 
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
+import EmailAgent from './components/EmailAgent'
+
+// Markdown to JSX renderer
+const parseMarkdown = (text: string) => {
+  // Split text into parts and parse markdown
+  const parts: (string | JSX.Element)[] = []
+  let lastIndex = 0
+
+  // Pattern for **bold**, *italic*, `code`, and links
+  const patterns = [
+    { regex: /\*\*(.*?)\*\*/g, tag: 'strong' },
+    { regex: /\*(.*?)\*/g, tag: 'em' },
+    { regex: /`(.*?)`/g, tag: 'code' },
+  ]
+
+  // Process bold first (highest priority)
+  let processedText = text.replace(/\*\*(.*?)\*\*/g, (match, content) => `__STRONG_START__${content}__STRONG_END__`)
+  // Process italic
+  processedText = processedText.replace(/\*(.*?)\*/g, (match, content) => `__EM_START__${content}__EM_END__`)
+  // Process code
+  processedText = processedText.replace(/`(.*?)`/g, (match, content) => `__CODE_START__${content}__CODE_END__`)
+  // Process links
+  processedText = processedText.replace(/\[(.*?)\]\((.*?)\)/g, (match, text, url) => `__LINK_START__${text}__LINK_SEP__${url}__LINK_END__`)
+
+  // Split and rebuild with JSX elements
+  const tokens = processedText.split(/(__\w+_START__|__\w+_END__|__\w+_SEP__)/)
+  let elementId = 0
+  let strongOpen = false
+  let emOpen = false
+  let codeOpen = false
+  let linkStart = null
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]
+
+    if (token === '__STRONG_START__') {
+      strongOpen = true
+    } else if (token === '__STRONG_END__') {
+      strongOpen = false
+    } else if (token === '__EM_START__') {
+      emOpen = true
+    } else if (token === '__EM_END__') {
+      emOpen = false
+    } else if (token === '__CODE_START__') {
+      codeOpen = true
+    } else if (token === '__CODE_END__') {
+      codeOpen = false
+    } else if (token === '__LINK_START__') {
+      linkStart = ''
+    } else if (token === '__LINK_SEP__') {
+      // URL separator found
+    } else if (token === '__LINK_END__') {
+      // Link processing - simplified for now
+    } else if (token && !token.includes('__')) {
+      let element: JSX.Element | string = token
+      if (strongOpen) {
+        element = <strong key={elementId++} className="font-bold">{token}</strong>
+      } else if (emOpen) {
+        element = <em key={elementId++} className="italic">{token}</em>
+      } else if (codeOpen) {
+        element = <code key={elementId++} className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-gray-800">{token}</code>
+      }
+      if (element !== token || token.trim()) {
+        parts.push(element)
+      }
+    }
+  }
+
+  return parts.length > 0 ? parts : text
+}
 
 interface Message {
   id: string
@@ -31,7 +101,7 @@ export default function Home() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [knowledgeBase, setKnowledgeBase] = useState<any[]>([])
   const [knowledgeStats, setKnowledgeStats] = useState({ total_documents: 0 })
-  const [currentView, setCurrentView] = useState<'chat' | 'knowledge'>('chat')
+  const [currentView, setCurrentView] = useState<'chat' | 'knowledge' | 'email'>('chat')
   const [sessionDocIds, setSessionDocIds] = useState<string[]>([])
   const [conversations, setConversations] = useState<any[]>([])
   
@@ -568,6 +638,25 @@ export default function Home() {
                 </div>
               </button>
 
+              {/* Email Assistant */}
+              <button
+                onClick={() => setCurrentView('email')}
+                className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${currentView === 'email'
+                  ? 'bg-slate-800 text-white'
+                  : 'hover:bg-slate-800 text-slate-300'
+                  }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>Email Agent</span>
+              </button>
+
               {/* Chat History */}
               <div className="mt-6 flex-1 flex flex-col min-h-0">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3">Recent Conversations</h3>
@@ -788,6 +877,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          ) : currentView === 'email' ? (
+            /* Email Agent View */
+            <EmailAgent />
           ) : (
             /* Chat View */
             <div>
@@ -972,7 +1064,11 @@ export default function Home() {
                             : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none'
                             }`}
                         >
-                          <p className="whitespace-pre-wrap">{message.text}</p>
+                          <p className="whitespace-pre-wrap leading-relaxed">
+                            {typeof message.text === 'string' && message.text.includes('**')
+                              ? parseMarkdown(message.text)
+                              : message.text}
+                          </p>
 
                           {/* Processing Steps */}
                           {message.processingSteps &&

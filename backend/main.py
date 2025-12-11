@@ -15,8 +15,14 @@ import hashlib
 from config import MODELS, CURRENT_MODEL, MAX_CONTEXT_LENGTH, TOP_K_RESULTS
 import PyPDF2
 from io import BytesIO
+from personal_assistant_routes import router as personal_assistant_router
+from email_agent_routes import router as email_agent_router
 
 app = FastAPI(title="Jarvis Assistant API")
+
+# Register routers
+app.include_router(personal_assistant_router)
+app.include_router(email_agent_router)
 
 # CORS middleware for frontend
 app.add_middleware(
